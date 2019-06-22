@@ -17,33 +17,66 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
 
+
+const mongoose = require("mongoose");
+mongoose.connect("mongodb+srv://admin_tejas:Test123@cluster0-rf821.mongodb.net/blogDB", {useNewUrlParser: true});
+
+const blogSchema = {
+  title : String,
+  post : String
+};
+
+const Blog = mongoose.model("Blog", blogSchema);
+
+
 let posts = [];
 
 app.get("/",function(req,res){
 
-res.render("home",{
-  homeContent : homeStartingContent,
-  allPosts : posts
+Blog.find({},function(err,results){
+
+if(err){
+  console.log(err);
+}else{
+
+
+  res.render("home",{
+    homeContent : homeStartingContent,
+    allPosts : results
+
+  });
+
+}
+
+
+
 
 });
+
+
 
 });
 
 app.get("/posts/:postId",function(req,res){
 
+let reqPostId = req.params.postId;
+
+Blog.findOne({_id : reqPostId},function(err,results){
+
+if (err){
+  console.log(err);
+}else{
+
+  res.render("post",{
+   userPostTitle: results.title,
+   userPostBody : results.post
+
+  });
+
+}
+
+});
 // console.log(req.params.postId);
-for (var i = 0;i< posts.length;i++){
-if (ld.lowerCase(posts[i].newPostTitle) === ld.lowerCase(req.params.postId)){
-
-   res.render("post",{
-    userPostTitle: posts[i].newPostTitle,
-    userPostBody : posts[i].newPostBody
-
-   });
-
-}
-
-}
 
 
 
@@ -71,21 +104,25 @@ res.render("compose");
 
 app.post("/compose",function(req,res){
 
-let newPost = {
+let newPost = new Blog({
 
-  newPostTitle : req.body.compNew ,
-  newPostBody : req.body.postBody
+  title : req.body.compNew ,
+  post : req.body.postBody
 
 
 
-};
+});
 
-posts.push(newPost);
+newPost.save();
 res.redirect("/");
 
 });
 
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 3000;
+}
 
-app.listen(3000, function() {
+app.listen(port, function() {
   console.log("Server started on port 3000");
 });
